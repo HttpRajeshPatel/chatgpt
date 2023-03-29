@@ -1,0 +1,124 @@
+<div class="content-wrapper">
+  <app-account-menu *ngIf="parentMenu == 'Account'"></app-account-menu>
+  <app-costcentre-menu *ngIf="parentMenu == 'CostCentre'"></app-costcentre-menu>
+  <app-application-menu *ngIf="parentMenu == 'Application'"></app-application-menu>
+  <div class="row">
+    <div class="col-lg-12 grid-margin">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-content">
+            <app-default-spinner></app-default-spinner>
+            <div *ngIf="parentMenu == 'Account'" class="card-title">{{'Account Notes' | translate}}</div>
+            <div *ngIf="parentMenu == 'CostCentre'" class="card-title">{{'Cost Centre Notes' | translate}}</div>
+            <div *ngIf="parentMenu == 'Application'" class="card-title">{{'Application Notes' | translate}}</div>
+            <app-not-authorised *ngIf="permissions && !(authInfo.Note_GetList || authInfo.Note_GetSchemeHolderNotes)"></app-not-authorised>
+            <form *ngIf="authInfo.Note_GetList || authInfo.Note_GetSchemeHolderNotes" [formGroup]="notesForm">
+              <div *ngIf="successMessage" id="divSuccessMessage" class="alert alert-success" role="alert">
+                {{successMessage}}
+              </div>
+              <div *ngIf="formErrors.pageError" id="divErrorMessage" class="alert alert-danger" role="alert">
+                {{formErrors.pageError}}
+              </div>
+              <div class="container">
+                <div class="row form-group">
+                  <div id = "filterNotes" *ngIf = "tenantConfig.accountDetails.showSalesContact && !authService.isSchemeHolder" class="col-md-12">
+                    <input type="radio" id="schemeNotes" formControlName="accessType" value="Scheme Notes"
+                      (click)="changeAccessType(0)" />
+                    <label for="schemeNotes" class="radio-label"> {{'Account Notes' | translate}}</label>
+                    <input type="radio" id="schemeHolderNotes" formControlName="accessType" value="Scheme Holder Notes"
+                      (click)="changeAccessType(1)" checked />
+                    <label for="schemeHolderNotes" class="radio-label"> {{'Scheme Holder Notes' | translate}}</label>
+                  </div>
+                  <div *ngIf="showAddNotes && (authInfo.Note_Post || authInfo.Note_PostSchemeHolderNote)" class="col-md-12">
+                    <textarea id="note" class="form-control" [placeholder]="'Add a note...' | translate"
+                      formControlName="note" rows="3" cols="200" [ngClass]="{'is-invalid': formErrors.note}"></textarea>
+                    <span class="invalid-feedback" *ngIf="formErrors.note">
+                      {{formErrors.note}}
+                    </span>
+                  </div>
+                </div>
+                <div class="row form-group" *ngIf="(authInfo.Note_Post || authInfo.Note_PostSchemeHolderNote) && showAddNotes">
+                  <div class="col-md-12">
+                    <p class="mr-1 float-left textBoxMsg">{{ '*Maximum of 500 characters' | translate }}</p>
+                    <button id="btnCancel" *ngIf="notesForm.value.note" type="submit"
+                      class=" btn-light mr-1 float-right" (click)="clearSearch()"><i class="fa fa-remove"></i></button>
+                    <button id="btnSave" *ngIf="notesForm.value.note" type="submit" class=" btn-light mr-1 float-right"
+                      (click)="addNote()"><i class="fa fa-check"></i></button>
+                  </div>
+                </div>
+                <div class="table-responsive card-content table-striped">
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>{{'Date' | translate}}</th>
+                        <th>{{'Updated By' | translate}}</th>
+                        <th>{{'Note' | translate}}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <ng-container *ngIf = "notes.length>0">
+                        <tr *ngFor="let note of notes; let counter = index">
+                          <td>{{note.noteDate | date: 'dd/MM/yyyy h:mm:ss a'}}</td>
+                          <td>{{note.actorDescr}}</td>
+                          <td>{{note.note}}</td>
+                        </tr>
+                      </ng-container>
+                      <tr *ngIf="notes?.length==0" style="text-align: center">
+                        <td colspan='99'>{{'No data found' | translate}}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <ngb-pagination *ngIf="notes?.length>0" [collectionSize]="pagingInfo.totalRecords"
+                    [(page)]="pagingInfo.pageNumber" [pageSize]="pagingInfo.recordsPerPage" [boundaryLinks]="true"
+                    (pageChange)="onPageChange($event)" [maxSize]="5"></ngb-pagination>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div *ngIf="authInfo.Note_GetList || authInfo.Note_GetSchemeHolderNotes" class="card-body card2">
+          <div class="card-content">
+            <div class="card-title">{{'Search a Note' | translate}}</div>
+            <div class="container">
+              <form [formGroup]="notesForm">
+                <div class="form-group row">
+                  <div class="col-md-2">
+                    <label for="dateFrom">{{ 'Date From' | translate }}</label>
+                  </div>
+                  <div class="col-md-4">
+                    <input id="dateFrom" type="date" class="form-control"
+                      [ngClass]="{'is-invalid': formErrors.dateFrom}"
+                      [placeholder]="'Date From (dd-mm-yyyy)' | translate" formControlName="dateFrom" maxlength="10">
+                    <span class="invalid-feedback" *ngIf="formErrors.dateFrom">
+                      {{formErrors.dateFrom}}
+                    </span>
+                  </div>
+                  <div class="col-md-2">
+                    <label for="dateTo">{{ 'Date To' | translate }}</label>
+                  </div>
+                  <div class="col-md-4">
+                    <input id="dateTo" type="date" class="form-control" [ngClass]="{'is-invalid': formErrors.dateTo}"
+                      [placeholder]="'Date To (dd-mm-yyyy)' | translate" formControlName="dateTo" maxlength="10">
+                    <span class="invalid-feedback" *ngIf="formErrors.dateTo">
+                      {{formErrors.dateTo}}
+                    </span>
+                  </div>
+                </div>
+                <div class="row justify-content-between vertical-margin">
+                  <div class="col-md-6">
+                  </div>
+                  <div class="col-md-4">
+                    <button id="btnSearch" type="submit" class="btn btn-success mr-1" (click)="getNotes()"
+                      *ngIf="authInfo.Note_GetList || authInfo.Note_GetSchemeHolderNotes">{{ 'Search' | translate }}</button>
+                    <button id="btnClear" type="submit" class="btn btn-success mr-1" (click)="clearSearch()"
+                      *ngIf="authInfo.Note_GetList || authInfo.Note_GetSchemeHolderNotes">{{ 'Clear' | translate }}</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
